@@ -36,12 +36,15 @@ class ChronoscapesApp {
         this.envSlider = document.getElementById('slider-env');
         this.pulseSlider = document.getElementById('slider-pulse');
         this.chimesSlider = document.getElementById('slider-chimes');
+        this.weatherSlider = document.getElementById('slider-weather');
         
         this.droneVal = document.getElementById('vol-drone-val');
         this.envVal = document.getElementById('vol-env-val');
         this.pulseVal = document.getElementById('vol-pulse-val');
         this.chimesVal = document.getElementById('vol-chimes-val');
+        this.weatherVal = document.getElementById('vol-weather-val');
         this.envLabel = document.getElementById('vol-env-label');
+        this.weatherSliderGroup = document.getElementById('weather-slider-group');
         
         // Master Controls
         this.playBtn = document.getElementById('master-play-btn');
@@ -52,6 +55,11 @@ class ChronoscapesApp {
         
         // Ambient Keyboard
         this.keyboardToggle = document.getElementById('keyboard-toggle');
+        this.rainPianoToggle = document.getElementById('rain-piano-toggle');
+        
+        // Sky Time Slider bindings
+        this.skyTimeSlider = document.getElementById('slider-sky-time');
+        this.skyTimeVal = document.getElementById('sky-time-val');
         
         this.init();
     }
@@ -79,6 +87,12 @@ class ChronoscapesApp {
         
         // Ambient Keyboard trigger listener
         this.setupKeyboardInstrument();
+        
+        // Rain Piano trigger listener
+        this.setupRainPiano();
+
+        // Sky Time Slider setup
+        this.setupSkyTimeSlider();
 
         // Setup Visualizer Mode Switchers
         this.setupVisualizerModes();
@@ -88,7 +102,7 @@ class ChronoscapesApp {
         window.addEventListener('resize', () => this.resizeVisualizer());
         
         // Initial theme style overrides
-        document.body.className = 'theme-tokyo';
+        this.applyScene('tokyo');
     }
     
     /* ==========================================
@@ -208,6 +222,17 @@ class ChronoscapesApp {
                 audioSynth.setVolume('chimes', val);
             }
         });
+
+        this.weatherSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            this.weatherVal.textContent = `${val}%`;
+            if (typeof canvasApp !== 'undefined') {
+                canvasApp.setWeatherLevel(val);
+            }
+            if (typeof audioSynth !== 'undefined') {
+                audioSynth.setWeatherLevel(val);
+            }
+        });
         
         this.muteBtn.addEventListener('click', () => {
             if (typeof audioSynth !== 'undefined') {
@@ -260,6 +285,29 @@ class ChronoscapesApp {
                 if (typeof audioSynth !== 'undefined') {
                     audioSynth.triggerFirewoodCrackle();
                 }
+            } else if (this.currentScene === 'zengarden') {
+                if (typeof canvasApp !== 'undefined') {
+                    canvasApp.bambooTipState = 'tipping';
+                    canvasApp.bambooTipProgress = 0.0;
+                    canvasApp.bambooWater = 0.0;
+                }
+                if (typeof audioSynth !== 'undefined') {
+                    audioSynth.triggerShishiOdoshi();
+                }
+            } else if (this.currentScene === 'tokyo') {
+                if (typeof canvasApp !== 'undefined') {
+                    canvasApp.triggerNeonOverload();
+                }
+                if (typeof audioSynth !== 'undefined') {
+                    audioSynth.triggerNeonOverload();
+                }
+            } else if (this.currentScene === 'space') {
+                if (typeof canvasApp !== 'undefined') {
+                    canvasApp.triggerGravityCollapse();
+                }
+                if (typeof audioSynth !== 'undefined') {
+                    audioSynth.triggerGravityCollapse();
+                }
             }
         });
     }
@@ -279,18 +327,49 @@ class ChronoscapesApp {
         } else if (scene === 'space') {
             displayTitle = 'DEEP SPACE 3050';
             envSoundLabel = 'Solar Storm';
+        } else if (scene === 'zengarden') {
+            displayTitle = 'COZY ZEN GARDEN 1480';
+            envSoundLabel = 'Bamboo Stream';
         }
         
         this.activeSceneBadge.textContent = displayTitle;
         this.envLabel.textContent = envSoundLabel;
         
         // Show/hide action button depending on scene
-        if (scene === 'fireplace') {
-            this.sceneActionBtn.classList.remove('hidden');
+        this.sceneActionBtn.classList.remove('hidden');
+        if (scene === 'tokyo') {
+            this.sceneActionBtn.textContent = '⚡ OVERLOAD NEON';
+        } else if (scene === 'fireplace') {
             this.sceneActionBtn.textContent = '🪵 FEED FIREWOOD';
+        } else if (scene === 'space') {
+            this.sceneActionBtn.textContent = '🌀 COLLAPSE GRAVITY';
+        } else if (scene === 'zengarden') {
+            this.sceneActionBtn.textContent = '🏮 TIP BAMBOO';
         } else {
             this.sceneActionBtn.classList.add('hidden');
             this.sceneActionBtn.textContent = '';
+        }
+
+        // Toggle Weather Slider Visibility and labels
+        const weatherLabel = document.getElementById('weather-slider-label');
+        if (scene === 'tokyo') {
+            this.weatherSliderGroup.classList.remove('hidden');
+            if (weatherLabel) weatherLabel.textContent = 'Storm & Thunder';
+        } else if (scene === 'fireplace') {
+            this.weatherSliderGroup.classList.remove('hidden');
+            if (weatherLabel) weatherLabel.textContent = 'Blizzard Wind';
+        } else {
+            this.weatherSliderGroup.classList.add('hidden');
+        }
+        
+        // Toggle Rain Piano widget visibility based on scene
+        const rainPianoWidget = document.getElementById('widget-rain-piano');
+        if (rainPianoWidget) {
+            if (scene === 'tokyo') {
+                rainPianoWidget.classList.remove('hidden');
+            } else {
+                rainPianoWidget.classList.add('hidden');
+            }
         }
         
         if (typeof canvasApp !== 'undefined') {
@@ -344,6 +423,41 @@ class ChronoscapesApp {
         }
     }
 
+    setupRainPiano() {
+        if (this.rainPianoToggle) {
+            this.rainPianoToggle.addEventListener('change', (e) => {
+                if (typeof canvasApp !== 'undefined') {
+                    canvasApp.isRainPianoActive = e.target.checked;
+                }
+            });
+        }
+    }
+
+    setupSkyTimeSlider() {
+        if (!this.skyTimeSlider) return;
+        this.skyTimeSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10);
+            if (this.skyTimeVal) {
+                this.skyTimeVal.textContent = this.formatSkyTime(val);
+            }
+            if (typeof canvasApp !== 'undefined') {
+                canvasApp.setSkyTime(val);
+            }
+        });
+    }
+
+    formatSkyTime(minutes) {
+        let hrs = Math.floor(minutes / 60);
+        let mins = minutes % 60;
+        const ampm = hrs >= 12 ? 'PM' : 'AM';
+        
+        hrs = hrs % 12;
+        if (hrs === 0) hrs = 12;
+        
+        const minsStr = mins.toString().padStart(2, '0');
+        return `${hrs}:${minsStr} ${ampm}`;
+    }
+
     /* ==========================================
        VISUALIZER THEMES SWITCHER INTERFACE
        ========================================== */
@@ -366,6 +480,61 @@ class ChronoscapesApp {
         this.visCanvas.height = this.visCanvas.parentElement.clientHeight;
     }
 
+    getVisualizerColors(isAlpha = false) {
+        const time = this.skyTimeSlider ? parseInt(this.skyTimeSlider.value, 10) : 720;
+        
+        const visKeyframes = [
+            { mins: 360, accent: [255, 126, 95], second: [254, 180, 123] },  // Sunrise peach/gold
+            { mins: 720, accent: [20, 90, 160], second: [110, 190, 220] },   // Noon blue/cyan
+            { mins: 1110, accent: [235, 95, 30], second: [255, 160, 50] },   // Sunset warm orange/gold
+            { mins: 1440, accent: [157, 78, 221], second: [0, 245, 212] }    // Midnight purple/cyan
+        ];
+        
+        let k1 = visKeyframes[0];
+        let k2 = visKeyframes[visKeyframes.length - 1];
+        for (let i = 0; i < visKeyframes.length - 1; i++) {
+            if (time >= visKeyframes[i].mins && time <= visKeyframes[i+1].mins) {
+                k1 = visKeyframes[i];
+                k2 = visKeyframes[i+1];
+                break;
+            }
+        }
+        
+        const range = k2.mins - k1.mins;
+        const pct = range === 0 ? 0 : (time - k1.mins) / range;
+        
+        const r_acc = Math.round(k1.accent[0] + (k2.accent[0] - k1.accent[0]) * pct);
+        const g_acc = Math.round(k1.accent[1] + (k2.accent[1] - k1.accent[1]) * pct);
+        const b_acc = Math.round(k1.accent[2] + (k2.accent[2] - k1.accent[2]) * pct);
+        
+        const r_sec = Math.round(k1.second[0] + (k2.second[0] - k1.second[0]) * pct);
+        const g_sec = Math.round(k1.second[1] + (k2.second[1] - k1.second[1]) * pct);
+        const b_sec = Math.round(k1.second[2] + (k2.second[2] - k1.second[2]) * pct);
+        
+        // Apply scene-specific visual adjustments
+        if (this.currentScene === 'fireplace') {
+            return {
+                accentColor: isAlpha ? `rgba(${Math.min(255, r_acc + 35)}, ${g_acc}, ${Math.max(0, b_acc - 15)}, 0.75)` : `rgb(${Math.min(255, r_acc + 35)}, ${g_acc}, ${Math.max(0, b_acc - 15)})`,
+                secondColor: isAlpha ? `rgba(${Math.min(255, r_sec + 35)}, ${g_sec}, ${Math.max(0, b_sec - 15)}, 0.7)` : `rgb(${Math.min(255, r_sec + 35)}, ${g_sec}, ${Math.max(0, b_sec - 15)})`
+            };
+        } else if (this.currentScene === 'zengarden') {
+            return {
+                accentColor: isAlpha ? `rgba(${Math.max(0, r_acc - 15)}, ${Math.min(255, g_acc + 25)}, ${b_acc}, 0.7)` : `rgb(${Math.max(0, r_acc - 15)}, ${Math.min(255, g_acc + 25)}, ${b_acc})`,
+                secondColor: isAlpha ? `rgba(${Math.max(0, r_sec - 15)}, ${Math.min(255, g_sec + 25)}, ${b_sec}, 0.75)` : `rgb(${Math.max(0, r_sec - 15)}, ${Math.min(255, g_sec + 25)}, ${b_sec})`
+            };
+        } else if (this.currentScene === 'space') {
+            return {
+                accentColor: isAlpha ? `rgba(${Math.max(0, r_acc - 20)}, ${Math.max(0, g_acc - 20)}, ${Math.min(255, b_acc + 10)}, 0.7)` : `rgb(${Math.max(0, r_acc - 20)}, ${Math.max(0, g_acc - 20)}, ${Math.min(255, b_acc + 10)})`,
+                secondColor: isAlpha ? `rgba(${Math.max(0, r_sec - 20)}, ${Math.max(0, g_sec - 20)}, ${Math.min(255, b_sec + 10)}, 0.75)` : `rgb(${Math.max(0, r_sec - 20)}, ${Math.max(0, g_sec - 20)}, ${Math.min(255, b_sec + 10)})`
+            };
+        }
+        
+        return {
+            accentColor: isAlpha ? `rgba(${r_acc}, ${g_acc}, ${b_acc}, 0.75)` : `rgb(${r_acc}, ${g_acc}, ${b_acc})`,
+            secondColor: isAlpha ? `rgba(${r_sec}, ${g_sec}, ${b_sec}, 0.75)` : `rgb(${r_sec}, ${g_sec}, ${b_sec})`
+        };
+    }
+
     animateVisualizer() {
         const draw = () => {
             requestAnimationFrame(draw);
@@ -384,20 +553,10 @@ class ChronoscapesApp {
             const h = this.visCanvas.height;
             const bufferLength = dataArray.length;
             
-            // Core scene color codes
-            let accentColor = '';
-            let secondColor = '';
-            
-            if (this.currentScene === 'tokyo') {
-                accentColor = '#9d4edd';
-                secondColor = '#00f5d4';
-            } else if (this.currentScene === 'fireplace') {
-                accentColor = '#ff5400';
-                secondColor = '#ffbe0b';
-            } else {
-                accentColor = '#3a0ca3';
-                secondColor = '#4361ee';
-            }
+            // Core scene color codes reactively blended by sky time
+            const colors = this.getVisualizerColors(false);
+            const accentColor = colors.accentColor;
+            const secondColor = colors.secondColor;
             
             this.visCtx.shadowBlur = 8;
             this.visCtx.shadowColor = secondColor;
@@ -451,20 +610,10 @@ class ChronoscapesApp {
         // Temporarily clear general glow for overlapping wave color fidelity
         this.visCtx.shadowBlur = 0;
         
-        // Core colors
-        let accentColor = '';
-        let secondColor = '';
-        
-        if (this.currentScene === 'tokyo') {
-            accentColor = 'rgba(157, 78, 221, 0.7)';
-            secondColor = 'rgba(0, 245, 212, 0.75)';
-        } else if (this.currentScene === 'fireplace') {
-            accentColor = 'rgba(255, 84, 0, 0.75)';
-            secondColor = 'rgba(255, 190, 11, 0.7)';
-        } else {
-            accentColor = 'rgba(58, 12, 163, 0.7)';
-            secondColor = 'rgba(67, 97, 238, 0.75)';
-        }
+        // Core colors reactively blended by sky time
+        const colors = this.getVisualizerColors(true);
+        const accentColor = colors.accentColor;
+        const secondColor = colors.secondColor;
         
         // Wave definitions: [frequency, amplitudeMultiplier, phaseShift, color, lineWidth]
         const waves = [

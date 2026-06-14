@@ -25,10 +25,14 @@ class AmbientSynthesizer {
         
         // Current scene state
         this.currentScene = 'tokyo';
+        this.weatherLevel = 0.3; // Default 30%
         
         // Wind chimes loop tracker
         this.chimesTimeout = null;
         this.isChimesRunning = false;
+        
+        // Zen Garden stream loop tracker
+        this.streamTimeout = null;
         
         // Pentatonic scale notes for chimes and keyboard synth
         this.chimeNotes = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66];
@@ -106,6 +110,11 @@ class AmbientSynthesizer {
             }
         });
         
+        if (this.isPlaying && this.currentScene === 'zengarden') {
+            if (this.streamTimeout) clearTimeout(this.streamTimeout);
+            this.startZenStreamLoop();
+        }
+        
         return this.isPlaying;
     }
     
@@ -142,6 +151,11 @@ class AmbientSynthesizer {
             } catch (e) {}
         });
         this.activeNodes = [];
+        
+        if (this.streamTimeout) {
+            clearTimeout(this.streamTimeout);
+            this.streamTimeout = null;
+        }
     }
     
     // Switch soundscape scenes
@@ -178,6 +192,9 @@ class AmbientSynthesizer {
         } else if (this.currentScene === 'space') {
             this.synthesizeSolarWind();
             this.synthesizeSpaceDrone();
+        } else if (this.currentScene === 'zengarden') {
+            this.synthesizeZenDrone();
+            this.startZenStreamLoop();
         }
     }
     
@@ -633,6 +650,641 @@ class AmbientSynthesizer {
         
         roarOsc.start(time);
         roarOsc.stop(time + 1.7);
+    }
+
+    /* ==========================================================================
+       TACTILE SOUND: SPACE SUPERNOVA SUB-BASS SHOCKWAVE
+       ========================================================================== */
+    triggerSpaceSupernova() {
+        if (!this.ctx || this.isMuted) return;
+        
+        const time = this.ctx.currentTime;
+        
+        // 1. Sub-bass shockwave sweep
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(60, time);
+        osc.frequency.exponentialRampToValueAtTime(30, time + 2.0); // drop below audible
+        
+        // High-Q lowpass filter to create a sweep resonance
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(250, time);
+        filter.frequency.exponentialRampToValueAtTime(45, time + 1.8);
+        filter.Q.setValueAtTime(8, time);
+        
+        // Swell gain envelope
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.setValueAtTime(0, time);
+        gainNode.gain.linearRampToValueAtTime(0.55, time + 0.15); // quick explosion attack
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, time + 2.5); // long rumble decay
+        
+        // 2. Cosmic feedback delay loop
+        const delay = this.ctx.createDelay();
+        delay.delayTime.setValueAtTime(0.35, time); // 350ms echo
+        
+        const delayGain = this.ctx.createGain();
+        delayGain.gain.setValueAtTime(0.35, time); // echo volume
+        
+        // Routing: Osc -> Filter -> GainNode -> Master (dry)
+        osc.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.masterGain);
+        
+        // GainNode -> Delay -> DelayGain -> Delay (feedback) and Master (wet)
+        gainNode.connect(delay);
+        delay.connect(delayGain);
+        delayGain.connect(delay);
+        delayGain.connect(this.masterGain);
+        
+        osc.start(time);
+        osc.stop(time + 2.6);
+    }
+
+    /* ==========================================================================
+       TACTILE SOUND: CRYSTALLINE BELL CHIME (METEOR SHATTER)
+       ========================================================================== */
+    playChimeTone() {
+        if (!this.ctx || this.isMuted) return;
+        
+        const time = this.ctx.currentTime;
+        const baseFreq = 1100 + Math.random() * 400; // 1100Hz to 1500Hz chime
+        
+        // Dual sine oscillators for high-pitched crystalline timbre
+        const osc1 = this.ctx.createOscillator();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(baseFreq, time);
+        
+        const osc2 = this.ctx.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(baseFreq * 2.01, time); // slight detuning
+        
+        const gain1 = this.ctx.createGain();
+        const gain2 = this.ctx.createGain();
+        
+        gain1.gain.setValueAtTime(0, time);
+        gain1.gain.linearRampToValueAtTime(0.15, time + 0.005);
+        gain1.gain.exponentialRampToValueAtTime(0.0001, time + 1.2);
+        
+        gain2.gain.setValueAtTime(0, time);
+        gain2.gain.linearRampToValueAtTime(0.06, time + 0.005);
+        gain2.gain.exponentialRampToValueAtTime(0.0001, time + 0.6);
+        
+        // Echo delay line
+        const delay = this.ctx.createDelay();
+        delay.delayTime.setValueAtTime(0.24, time); // 240ms delay
+        
+        const delayGain = this.ctx.createGain();
+        delayGain.gain.setValueAtTime(0.4, time);
+        
+        // Random stereo panning
+        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        const panVal = Math.random() * 1.4 - 0.7;
+        
+        osc1.connect(gain1);
+        osc2.connect(gain2);
+        
+        const chimeMix = this.ctx.createGain();
+        gain1.connect(chimeMix);
+        gain2.connect(chimeMix);
+        
+        if (panner) {
+            panner.pan.setValueAtTime(panVal, time);
+            chimeMix.connect(panner);
+            panner.connect(this.masterGain);
+            panner.connect(delay);
+        } else {
+            chimeMix.connect(this.masterGain);
+            chimeMix.connect(delay);
+        }
+        
+        delay.connect(delayGain);
+        delayGain.connect(delay);
+        delayGain.connect(this.masterGain);
+        
+        osc1.start(time);
+        osc2.start(time);
+        
+        osc1.stop(time + 1.3);
+        osc2.stop(time + 0.7);
+    }
+
+    /* ==========================================================================
+       NEW FEATURE: COZY ZEN GARDEN GENERATORS & INTERACTIVES
+       ========================================================================== */
+    synthesizeZenDrone() {
+        // Soft sine wave drone at 65.4Hz + 65.7Hz (detuned)
+        const osc1 = this.ctx.createOscillator();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(65.4, this.ctx.currentTime); // C2
+        
+        const osc2 = this.ctx.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(65.7, this.ctx.currentTime);
+        
+        const lowpass = this.ctx.createBiquadFilter();
+        lowpass.type = 'lowpass';
+        lowpass.frequency.setValueAtTime(90, this.ctx.currentTime);
+        
+        osc1.connect(lowpass);
+        osc2.connect(lowpass);
+        lowpass.connect(this.channels.drone.node);
+        
+        osc1.start();
+        osc2.start();
+        
+        // Add soft wind sweeps through bandpass filter on white noise
+        const wind = this.ctx.createBufferSource();
+        wind.buffer = this.createWhiteNoiseBuffer();
+        wind.loop = true;
+        
+        const windFilter = this.ctx.createBiquadFilter();
+        windFilter.type = 'bandpass';
+        windFilter.frequency.setValueAtTime(350, this.ctx.currentTime); // low rustle
+        windFilter.Q.setValueAtTime(2.0, this.ctx.currentTime);
+        
+        const windLfo = this.ctx.createOscillator();
+        windLfo.type = 'sine';
+        windLfo.frequency.setValueAtTime(0.04, this.ctx.currentTime); // 25 seconds loop
+        
+        const windLfoGain = this.ctx.createGain();
+        windLfoGain.gain.setValueAtTime(150, this.ctx.currentTime); // sweeps 200Hz to 500Hz
+        
+        windLfo.connect(windLfoGain);
+        windLfoGain.connect(windFilter.frequency);
+        
+        const windGain = this.ctx.createGain();
+        windGain.gain.setValueAtTime(0.35, this.ctx.currentTime); // soft wind volume
+        
+        wind.connect(windFilter);
+        windFilter.connect(windGain);
+        windGain.connect(this.channels.env.node);
+        
+        windLfo.start();
+        wind.start();
+        
+        this.activeNodes.push(osc1, osc2, windLfo, wind);
+    }
+
+    startZenStreamLoop() {
+        if (this.currentScene !== 'zengarden' || !this.isPlaying) return;
+        this.playWaterDrop();
+        
+        const nextDelay = Math.random() * 180 + 70; // 70ms to 250ms
+        this.streamTimeout = setTimeout(() => this.startZenStreamLoop(), nextDelay);
+    }
+
+    playWaterDrop() {
+        if (!this.ctx || this.isMuted || !this.isPlaying || this.channels.env.vol <= 0 || this.currentScene !== 'zengarden') return;
+        
+        const time = this.ctx.currentTime;
+        const baseFreq = 800 + Math.random() * 800; // 800Hz to 1600Hz
+        
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sine';
+        
+        // Pitch drop curve to simulate water drip
+        osc.frequency.setValueAtTime(baseFreq, time);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq * 0.4, time + 0.08);
+        
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0, time);
+        gain.gain.linearRampToValueAtTime(Math.random() * 0.03 + 0.015, time + 0.005);
+        gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.12);
+        
+        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        const panValue = Math.random() * 1.0 - 0.5;
+        
+        osc.connect(gain);
+        
+        if (panner) {
+            panner.pan.setValueAtTime(panValue, time);
+            gain.connect(panner);
+            panner.connect(this.channels.env.node);
+        } else {
+            gain.connect(this.channels.env.node);
+        }
+        
+        osc.start(time);
+        osc.stop(time + 0.15);
+    }
+
+    triggerShishiOdoshi() {
+        if (!this.ctx || this.isMuted) return;
+        
+        const time = this.ctx.currentTime;
+        
+        // 1. Splash sound (water dumping)
+        const splashBuffer = this.createWhiteNoiseBuffer();
+        const splashSource = this.ctx.createBufferSource();
+        splashSource.buffer = splashBuffer;
+        
+        const splashFilter = this.ctx.createBiquadFilter();
+        splashFilter.type = 'lowpass';
+        splashFilter.frequency.setValueAtTime(1200, time);
+        splashFilter.frequency.exponentialRampToValueAtTime(300, time + 0.4);
+        
+        const splashGain = this.ctx.createGain();
+        splashGain.gain.setValueAtTime(0.0, time);
+        splashGain.gain.linearRampToValueAtTime(0.28, time + 0.05);
+        splashGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.55);
+        
+        splashSource.connect(splashFilter);
+        splashFilter.connect(splashGain);
+        splashGain.connect(this.masterGain);
+        
+        splashSource.start(time);
+        splashSource.stop(time + 0.6);
+        
+        // 2. Wooden clack impact (delayed by 0.35 seconds after start of tip)
+        const clackTime = time + 0.35;
+        
+        // High click (contact impact)
+        const clickOsc = this.ctx.createOscillator();
+        clickOsc.type = 'square';
+        clickOsc.frequency.setValueAtTime(680, clackTime);
+        clickOsc.frequency.exponentialRampToValueAtTime(180, clackTime + 0.015);
+        
+        const clickGain = this.ctx.createGain();
+        clickGain.gain.setValueAtTime(0.0, clackTime);
+        clickGain.gain.linearRampToValueAtTime(0.24, clackTime + 0.001);
+        clickGain.gain.exponentialRampToValueAtTime(0.0001, clackTime + 0.018);
+        
+        clickOsc.connect(clickGain);
+        clickGain.connect(this.masterGain);
+        
+        clickOsc.start(clackTime);
+        clickOsc.stop(clackTime + 0.03);
+        
+        // Main wooden body resonance
+        const bodyOsc = this.ctx.createOscillator();
+        bodyOsc.type = 'triangle';
+        bodyOsc.frequency.setValueAtTime(145, clackTime);
+        
+        const bodyGain = this.ctx.createGain();
+        bodyGain.gain.setValueAtTime(0.0, clackTime);
+        bodyGain.gain.linearRampToValueAtTime(0.48, clackTime + 0.002);
+        bodyGain.gain.exponentialRampToValueAtTime(0.0001, clackTime + 0.11);
+        
+        const bodyFilter = this.ctx.createBiquadFilter();
+        bodyFilter.type = 'bandpass';
+        bodyFilter.frequency.setValueAtTime(175, clackTime);
+        bodyFilter.Q.setValueAtTime(1.5, clackTime);
+        
+        bodyOsc.connect(bodyFilter);
+        bodyFilter.connect(bodyGain);
+        bodyGain.connect(this.masterGain);
+        
+        bodyOsc.start(clackTime);
+        bodyOsc.stop(clackTime + 0.15);
+    }
+
+    /* ==========================================================================
+       NEW FEATURE: TOKYO RAIN PIANO PENTATONIC SYNTHESIS
+       ========================================================================== */
+    playRhodesPianoNote(freq) {
+        if (!this.ctx || this.isMuted) return;
+        
+        const time = this.ctx.currentTime;
+        
+        // Fundamental (warm sine wave)
+        const fundamental = this.ctx.createOscillator();
+        fundamental.type = 'sine';
+        fundamental.frequency.setValueAtTime(freq, time);
+        
+        // Soft triangle overtone (creates warm electric keyboard growl)
+        const overtone1 = this.ctx.createOscillator();
+        overtone1.type = 'triangle';
+        overtone1.frequency.setValueAtTime(freq * 2.0, time);
+        
+        // Crystalline metal tine click (high frequency decaying instantly)
+        const tine = this.ctx.createOscillator();
+        tine.type = 'sine';
+        tine.frequency.setValueAtTime(freq * 6.004, time);
+        
+        // Volume envelopes
+        const fundGain = this.ctx.createGain();
+        fundGain.gain.setValueAtTime(0, time);
+        fundGain.gain.linearRampToValueAtTime(0.18, time + 0.012);
+        fundGain.gain.exponentialRampToValueAtTime(0.0001, time + 1.8);
+        
+        const overGain = this.ctx.createGain();
+        overGain.gain.setValueAtTime(0, time);
+        overGain.gain.linearRampToValueAtTime(0.04, time + 0.015);
+        overGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.7);
+        
+        const tineGain = this.ctx.createGain();
+        tineGain.gain.setValueAtTime(0, time);
+        tineGain.gain.linearRampToValueAtTime(0.15, time + 0.002);
+        tineGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.045);
+        
+        // Stereo panning based on frequency
+        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        let panVal = (freq - 400) / 400; // maps roughly between -0.8 and 0.8
+        panVal = Math.max(-0.85, Math.min(0.85, panVal));
+        
+        fundamental.connect(fundGain);
+        overtone1.connect(overGain);
+        tine.connect(tineGain);
+        
+        const pianoMix = this.ctx.createGain();
+        fundGain.connect(pianoMix);
+        overGain.connect(pianoMix);
+        tineGain.connect(pianoMix);
+        
+        if (panner) {
+            panner.pan.setValueAtTime(panVal, time);
+            pianoMix.connect(panner);
+            panner.connect(this.masterGain);
+        } else {
+            pianoMix.connect(this.masterGain);
+        }
+        
+        fundamental.start(time);
+        overtone1.start(time);
+        tine.start(time);
+        
+        fundamental.stop(time + 2.0);
+        overtone1.stop(time + 0.9);
+        tine.stop(time + 0.1);
+    }
+
+    /* ==========================================================================
+       NEW FEATURE: COSMIC CONSTELLATION WARM SYNTH PAD
+       ========================================================================== */
+    playSynthPadChord(freqs) {
+        if (!this.ctx || this.isMuted) return;
+        
+        const time = this.ctx.currentTime;
+        const duration = 4.5; // long, slow release pad
+        
+        const padMix = this.ctx.createGain();
+        padMix.gain.setValueAtTime(0, time);
+        padMix.gain.linearRampToValueAtTime(0.22, time + 1.2); // 1.2s attack
+        padMix.gain.setValueAtTime(0.22, time + 2.0);
+        padMix.gain.exponentialRampToValueAtTime(0.0001, time + duration); // slow release
+        
+        // Lowpass filter sweep
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(180, time);
+        filter.frequency.exponentialRampToValueAtTime(950, time + 1.5);
+        filter.frequency.exponentialRampToValueAtTime(120, time + duration - 0.2);
+        filter.Q.setValueAtTime(2.2, time);
+        
+        padMix.connect(filter);
+        filter.connect(this.masterGain);
+        
+        // Start oscillators for each note in the chord
+        freqs.forEach(freq => {
+            const osc = this.ctx.createOscillator();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, time);
+            
+            const sub = this.ctx.createOscillator();
+            sub.type = 'triangle';
+            sub.frequency.setValueAtTime(freq / 2, time); // one octave lower
+            
+            const oscGain = this.ctx.createGain();
+            oscGain.gain.setValueAtTime(0.06, time);
+            
+            const subGain = this.ctx.createGain();
+            subGain.gain.setValueAtTime(0.08, time);
+            
+            osc.connect(oscGain);
+            sub.connect(subGain);
+            
+            oscGain.connect(padMix);
+            subGain.connect(padMix);
+            
+            osc.start(time);
+            sub.start(time);
+            
+            osc.stop(time + duration + 0.1);
+            sub.stop(time + duration + 0.1);
+        });
+    }
+
+    triggerNeonOverload() {
+        if (!this.ctx || this.isMuted) return;
+        
+        const time = this.ctx.currentTime;
+        
+        // Screaming resonant analog sweep
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80, time);
+        osc.frequency.exponentialRampToValueAtTime(880, time + 0.45);
+        osc.frequency.exponentialRampToValueAtTime(110, time + 0.9);
+        
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'peaking';
+        filter.frequency.setValueAtTime(300, time);
+        filter.frequency.exponentialRampToValueAtTime(3200, time + 0.45);
+        filter.frequency.exponentialRampToValueAtTime(220, time + 0.95);
+        filter.Q.setValueAtTime(12.0, time);
+        
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.setValueAtTime(0, time);
+        gainNode.gain.linearRampToValueAtTime(0.38, time + 0.08);
+        gainNode.gain.linearRampToValueAtTime(0.28, time + 0.45);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, time + 1.3);
+        
+        // Glitch echo delay lines
+        const delay = this.ctx.createDelay();
+        delay.delayTime.setValueAtTime(0.08, time); // 80ms fast metallic feedback delay
+        
+        const delayGain = this.ctx.createGain();
+        delayGain.gain.setValueAtTime(0.55, time); // metallic resonance feedback
+        
+        osc.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.masterGain);
+        
+        // Setup feedback delay path
+        gainNode.connect(delay);
+        delay.connect(delayGain);
+        delayGain.connect(delay);
+        delayGain.connect(this.masterGain);
+        
+        osc.start(time);
+        osc.stop(time + 1.4);
+    }
+
+    triggerGravityCollapse() {
+        if (!this.ctx || this.isMuted) return;
+        
+        const time = this.ctx.currentTime;
+        
+        // Vacuum suction lowpass sweep noise
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createWhiteNoiseBuffer();
+        
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(2200, time);
+        filter.frequency.exponentialRampToValueAtTime(80, time + 0.8);
+        filter.Q.setValueAtTime(7.0, time);
+        
+        const gainNode = this.ctx.createGain();
+        gainNode.gain.setValueAtTime(0, time);
+        gainNode.gain.linearRampToValueAtTime(0.32, time + 0.12);
+        gainNode.gain.linearRampToValueAtTime(0.42, time + 0.6);
+        gainNode.gain.linearRampToValueAtTime(0.001, time + 0.8); // drops to silent right before supernova
+        
+        noise.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(this.masterGain);
+        
+        noise.start(time);
+        noise.stop(time + 0.85);
+        
+        // Schedule supernova sound after 850ms
+        setTimeout(() => {
+            if (this.currentScene === 'space' && this.isPlaying) {
+                this.triggerSpaceSupernova();
+            }
+        }, 850);
+    }
+
+    setWeatherLevel(percent) {
+        this.weatherLevel = percent / 100;
+    }
+
+    triggerTimeWarp() {
+        if (!this.ctx || this.isMuted) return;
+        
+        const time = this.ctx.currentTime;
+        const duration = 1.2; // whoosh duration
+        
+        // 1. Pitch-rising sweeps
+        const osc1 = this.ctx.createOscillator();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(120, time);
+        osc1.frequency.exponentialRampToValueAtTime(1200, time + duration - 0.2);
+        
+        const osc2 = this.ctx.createOscillator();
+        osc2.type = 'sawtooth';
+        osc2.frequency.setValueAtTime(80, time);
+        osc2.frequency.exponentialRampToValueAtTime(800, time + duration - 0.1);
+        
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(150, time);
+        filter.frequency.exponentialRampToValueAtTime(4000, time + duration - 0.3);
+        filter.Q.setValueAtTime(4.0, time);
+        
+        const oscGain = this.ctx.createGain();
+        oscGain.gain.setValueAtTime(0, time);
+        oscGain.gain.linearRampToValueAtTime(0.18, time + 0.15); // rise quickly
+        oscGain.gain.exponentialRampToValueAtTime(0.0001, time + duration); // decay down
+        
+        osc1.connect(filter);
+        osc2.connect(filter);
+        filter.connect(oscGain);
+        
+        // 2. Filtered noise sweep for atmospheric "whoosh" suction
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.createWhiteNoiseBuffer();
+        
+        const noiseFilter = this.ctx.createBiquadFilter();
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.setValueAtTime(300, time);
+        noiseFilter.frequency.exponentialRampToValueAtTime(2500, time + duration - 0.25);
+        noiseFilter.Q.setValueAtTime(2.5, time);
+        
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0, time);
+        noiseGain.gain.linearRampToValueAtTime(0.24, time + 0.2);
+        noiseGain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+        
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        
+        // 3. Stereo panning (Whoosh moves from left to right)
+        const panner = this.ctx.createStereoPanner ? this.ctx.createStereoPanner() : null;
+        if (panner) {
+            panner.pan.setValueAtTime(-0.85, time);
+            panner.pan.linearRampToValueAtTime(0.85, time + duration);
+            
+            oscGain.connect(panner);
+            noiseGain.connect(panner);
+            panner.connect(this.masterGain);
+        } else {
+            oscGain.connect(this.masterGain);
+            noiseGain.connect(this.masterGain);
+        }
+        
+        osc1.start(time);
+        osc2.start(time);
+        noise.start(time);
+        
+        osc1.stop(time + duration + 0.1);
+        osc2.stop(time + duration + 0.1);
+        noise.stop(time + duration + 0.1);
+    }
+
+    playThunder(level) {
+        if (!this.ctx || this.isMuted || !this.isPlaying) return;
+        
+        const time = this.ctx.currentTime;
+        const duration = 2.8 + Math.random() * 0.6;
+        
+        // 1. Low rumble (modulated sub-bass)
+        const rumble = this.ctx.createOscillator();
+        rumble.type = 'sine';
+        rumble.frequency.setValueAtTime(48, time);
+        
+        // Vibrato LFO for rolling thunder sound
+        const lfo = this.ctx.createOscillator();
+        lfo.frequency.setValueAtTime(8 + Math.random() * 4, time);
+        
+        const lfoGain = this.ctx.createGain();
+        lfoGain.gain.setValueAtTime(14, time);
+        
+        lfo.connect(lfoGain);
+        lfoGain.connect(rumble.frequency);
+        
+        const rumbleFilter = this.ctx.createBiquadFilter();
+        rumbleFilter.type = 'lowpass';
+        rumbleFilter.frequency.setValueAtTime(100, time);
+        
+        const rumbleGain = this.ctx.createGain();
+        rumbleGain.gain.setValueAtTime(0, time);
+        rumbleGain.gain.linearRampToValueAtTime(0.24 * level, time + 0.15); // fade in quickly
+        rumbleGain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+        
+        rumble.connect(rumbleFilter);
+        rumbleFilter.connect(rumbleGain);
+        rumbleGain.connect(this.masterGain);
+        
+        // 2. Filtered crackle (higher frequency rumble crackles)
+        const crackleNoise = this.ctx.createBufferSource();
+        crackleNoise.buffer = this.createWhiteNoiseBuffer();
+        
+        const crackleFilter = this.ctx.createBiquadFilter();
+        crackleFilter.type = 'bandpass';
+        crackleFilter.frequency.setValueAtTime(70, time);
+        crackleFilter.frequency.exponentialRampToValueAtTime(32, time + duration - 0.4);
+        crackleFilter.Q.setValueAtTime(1.5, time);
+        
+        const crackleGain = this.ctx.createGain();
+        crackleGain.gain.setValueAtTime(0, time);
+        crackleGain.gain.linearRampToValueAtTime(0.12 * level, time + 0.08);
+        crackleGain.gain.exponentialRampToValueAtTime(0.0001, time + duration - 0.2);
+        
+        crackleNoise.connect(crackleFilter);
+        crackleFilter.connect(crackleGain);
+        crackleGain.connect(this.masterGain);
+        
+        // Start nodes
+        rumble.start(time);
+        lfo.start(time);
+        crackleNoise.start(time);
+        
+        rumble.stop(time + duration + 0.1);
+        lfo.stop(time + duration + 0.1);
+        crackleNoise.stop(time + duration + 0.1);
     }
 }
 

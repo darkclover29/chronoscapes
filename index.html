@@ -115,6 +115,18 @@
                     <p class="widget-desc">Play ambient musical chords and canvas ripples as you type anywhere.</p>
                 </div>
 
+                <!-- Rain Piano Widget (Only active in Tokyo) -->
+                <div class="widget rain-piano-widget hidden" id="widget-rain-piano">
+                    <div class="widget-header-row">
+                        <h3 class="widget-title">TOKYO RAIN PIANO</h3>
+                        <label class="switch-container">
+                            <input type="checkbox" id="rain-piano-toggle">
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+                    <p class="widget-desc">Generative lo-fi electric Rhodes piano notes played by falling raindrops in Tokyo.</p>
+                </div>
+
                 <!-- Breath Sync Widget -->
                 <div class="widget breathing-widget">
                     <h3 class="widget-title">BREATH SYNC</h3>
@@ -223,6 +235,15 @@
                             </div>
                             <input type="range" id="slider-chimes" min="0" max="100" value="0" class="ambient-slider">
                         </div>
+
+                        <!-- Weather Effects Slider -->
+                        <div class="slider-group" id="weather-slider-group">
+                            <div class="slider-label">
+                                <span id="weather-slider-label">Atmospheric Level</span>
+                                <span id="vol-weather-val">30%</span>
+                            </div>
+                            <input type="range" id="slider-weather" min="0" max="100" value="30" class="ambient-slider">
+                        </div>
                     </div>
                 </div>
 
@@ -250,6 +271,11 @@
                                 </div>
                                 <h3>Neo-Tokyo</h3>
                                 <p>Cyberpunk rainfall, neon reflections, and low-frequency system hums.</p>
+                                <div class="card-meta">
+                                    <div class="meta-row"><span>ENV</span><span>rain.synth</span></div>
+                                    <div class="meta-row"><span>DRONE</span><span>detuned-saw</span></div>
+                                    <div class="meta-row"><span>REFL</span><span>neon-asphalt.fx</span></div>
+                                </div>
                             </div>
                         </div>
 
@@ -266,6 +292,11 @@
                                 </div>
                                 <h3>Cozy Hearth</h3>
                                 <p>Soothing crackles of firewood, ambient warmth, and faint record player dust.</p>
+                                <div class="card-meta">
+                                    <div class="meta-row"><span>ENV</span><span>wood-crackle</span></div>
+                                    <div class="meta-row"><span>DRONE</span><span>warm-tri</span></div>
+                                    <div class="meta-row"><span>FEED</span><span>firewood.phys</span></div>
+                                </div>
                             </div>
                         </div>
 
@@ -283,8 +314,41 @@
                                 </div>
                                 <h3>Deep Space</h3>
                                 <p>Cosmic solar wind, high-altitude stardust shimmer, and deep capsule echoes.</p>
+                                <div class="card-meta">
+                                    <div class="meta-row"><span>ENV</span><span>solar-wind</span></div>
+                                    <div class="meta-row"><span>DRONE</span><span>phase-sine</span></div>
+                                    <div class="meta-row"><span>WELL</span><span>gravity.vortex</span></div>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Zen Garden Scene -->
+                        <div class="scene-card" data-scene="zengarden">
+                            <div class="card-glow zengarden-glow"></div>
+                            <div class="card-content">
+                                <div class="scene-card-header">
+                                    <span class="card-year">1480 AD</span>
+                                    <!-- Bamboo stalk icon -->
+                                    <svg class="scene-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2v20M17 5H7M19 12H5M17 19H7"></path>
+                                    </svg>
+                                </div>
+                                <h3>Zen Garden</h3>
+                                <p>Flowing mountain stream, tipping bamboo fountain, and raked moss gravel.</p>
+                                <div class="card-meta">
+                                    <div class="meta-row"><span>ENV</span><span>water-drip</span></div>
+                                    <div class="meta-row"><span>DRONE</span><span>C2-sub-sine</span></div>
+                                    <div class="meta-row"><span>RAKE</span><span>gravel-groove.fx</span></div>
+                                </div>
+                        </div>
+                    </div>
+                    <!-- Sky Time Control Slider -->
+                    <div class="sky-time-container">
+                        <div class="sky-time-label-row">
+                            <span class="sky-time-title">🕰️ SKY TIME CONTROL</span>
+                            <span id="sky-time-val" class="sky-time-value">12:00 PM</span>
+                        </div>
+                        <input type="range" id="slider-sky-time" min="360" max="1440" value="720" step="15" class="ambient-slider">
                     </div>
                 </div>
             </section>

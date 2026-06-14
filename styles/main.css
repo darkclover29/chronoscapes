@@ -51,6 +51,14 @@ body.theme-space {
     --accent-secondary-glow: rgba(67, 97, 238, 0.4);
 }
 
+body.theme-zengarden {
+    --bg-color: #0d120d;
+    --accent-color: #556b2f;
+    --accent-glow: rgba(85, 107, 47, 0.45);
+    --accent-secondary: #8fbc8f;
+    --accent-secondary-glow: rgba(143, 188, 143, 0.35);
+}
+
 /* Basic Reset & Core Styles */
 * {
     box-sizing: border-box;
@@ -982,37 +990,109 @@ input:checked + .switch-slider:before {
 
 .scenes-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
     flex: 1;
 }
 
+/* Sky Time Control Slider Styling */
+.sky-time-container {
+    background: rgba(255, 255, 255, 0.015);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.sky-time-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sky-time-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+}
+
+.sky-time-value {
+    font-family: var(--font-mono);
+    color: var(--accent-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-shadow: 0 0 5px var(--accent-secondary-glow);
+    transition: color var(--transition-speed) ease, text-shadow var(--transition-speed) ease;
+}
+
 .scene-card {
     position: relative;
-    background: rgba(255, 255, 255, 0.015);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(12, 12, 22, 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 16px;
-    padding: 1.5rem;
+    padding: 1.3rem;
     cursor: pointer;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+    min-height: 185px;
     transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), 
                 border-color 0.4s ease, 
-                background-color 0.4s ease;
+                background-color 0.4s ease,
+                box-shadow 0.4s ease;
 }
 
 .scene-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.045);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48);
 }
 
 .scene-card.active {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.065);
     border-color: var(--accent-color);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 
+                0 0 18px var(--accent-glow),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-top: 0.8rem;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+    padding-top: 0.7rem;
+    width: 100%;
+}
+
+.meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+}
+
+.meta-row span:first-child {
+    color: var(--text-muted);
+}
+
+.meta-row span:last-child {
+    color: var(--accent-secondary);
+    font-weight: 700;
+    text-shadow: 0 0 5px var(--accent-secondary-glow);
+    transition: color var(--transition-speed) ease, text-shadow var(--transition-speed) ease;
 }
 
 .card-glow {
@@ -1034,6 +1114,7 @@ input:checked + .switch-slider:before {
 .tokyo-glow { background: radial-gradient(circle, rgba(157,78,221,0.45) 0%, transparent 70%); }
 .fireplace-glow { background: radial-gradient(circle, rgba(255,84,0,0.45) 0%, transparent 70%); }
 .space-glow { background: radial-gradient(circle, rgba(67,97,238,0.45) 0%, transparent 70%); }
+.zengarden-glow { background: radial-gradient(circle, rgba(143,188,143,0.45) 0%, transparent 70%); }
 
 .card-content {
     position: relative;
@@ -1088,6 +1169,8 @@ input:checked + .switch-slider:before {
     font-size: 0.75rem;
     color: var(--text-secondary);
     line-height: 1.4;
+    height: 2.6rem;
+    overflow: hidden;
 }
 
 /* ==========================================================================
@@ -1199,6 +1282,10 @@ input:checked + .switch-slider:before {
     
     .scenes-widget {
         padding: 1.2rem;
+    }
+    
+    .scenes-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
