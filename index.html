@@ -2,29 +2,23 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Chronoscapes — Immersive Audio-Visual Ambient Workspace</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⏳</text></svg>">
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Main Stylesheet -->
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <!-- Canvas for Particle visualizer -->
     <canvas id="ambient-canvas"></canvas>
-
-    <!-- CRT Monitor scanline overlay -->
     <div id="crt-overlay" class="crt-screen pointer-events-none hidden"></div>
-
-    <!-- Ambient Grid Overlay for Tech Vibe -->
     <div class="grid-overlay"></div>
 
-    <!-- Entrance Screen (Required to unlock Web Audio API) -->
+    <!-- Entrance Screen -->
     <div id="entrance-screen" class="overlay">
         <div class="entrance-card">
+            <div class="entrance-icon">⏳</div>
             <h1 class="logo-title">CHRONOSCAPES</h1>
             <p class="logo-subtitle">DYNAMIC AUDIO-VISUAL TIME WORKSPACE</p>
             <div class="divider"></div>
@@ -38,9 +32,9 @@
         </div>
     </div>
 
-    <!-- Main Workspace UI -->
+    <!-- Main Workspace -->
     <div id="workspace" class="workspace-container hidden">
-        
+
         <!-- Header -->
         <header class="main-header glass-panel">
             <div class="header-logo">
@@ -49,53 +43,64 @@
             </div>
             <div class="header-time" id="digital-clock">00:00:00</div>
             <div class="header-controls">
-                <!-- CRT Switcher -->
                 <button id="crt-toggle-btn" class="icon-btn header-btn" title="Toggle CRT Retro Filter">
                     <svg class="crt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                         <line x1="8" y1="21" x2="16" y2="21"></line>
                         <line x1="12" y1="17" x2="12" y2="21"></line>
                     </svg>
-                    <span>CRT OFF</span>
+                    <span class="crt-label">CRT OFF</span>
                 </button>
                 <span class="scene-badge" id="active-scene-badge">NEO-TOKYO 2099</span>
             </div>
         </header>
 
-        <!-- Main Content Area -->
+        <!-- Mobile Tab Bar -->
+        <div class="mobile-tabs">
+            <button class="mobile-tab active" data-panel="focus">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Focus
+            </button>
+            <button class="mobile-tab" data-panel="mixer">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                Mixer
+            </button>
+            <button class="mobile-tab" data-panel="scenes">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Scenes
+            </button>
+        </div>
+
+        <!-- Main Content -->
         <main class="workspace-main">
-            <!-- Left Panel: Productivity Widgets -->
-            <section class="productivity-panel glass-panel">
+
+            <!-- Left Panel: Focus Tools -->
+            <section class="productivity-panel glass-panel" id="panel-focus">
                 <div class="panel-header">
                     <h2>FOCUS TOOLS</h2>
                     <span class="glow-indicator"></span>
                 </div>
 
-                <!-- Pomodoro Widget -->
+                <!-- Pomodoro -->
                 <div class="widget pomodoro-widget">
                     <div class="widget-header-row">
                         <h3 class="widget-title">POMODORO TIMER</h3>
                         <button id="pomo-settings-toggle" class="icon-text-btn" title="Timer Settings">⚙ Settings</button>
                     </div>
-                    
-                    <!-- Timer display -->
                     <div class="pomo-display" id="pomo-time">25:00</div>
-                    
-                    <!-- Dynamic timer settings panel -->
                     <div class="pomo-settings-panel hidden" id="pomo-settings-panel">
                         <div class="setting-row">
-                            <label for="pomo-work-input">Work (min):</label>
+                            <label for="pomo-work-input">Work (min)</label>
                             <input type="number" id="pomo-work-input" min="1" max="60" value="25">
                         </div>
                         <div class="setting-row">
-                            <label for="pomo-break-input">Break (min):</label>
+                            <label for="pomo-break-input">Break (min)</label>
                             <input type="number" id="pomo-break-input" min="1" max="30" value="5">
                         </div>
                     </div>
-
                     <div class="pomo-controls">
-                        <button id="pomo-start-btn" class="widget-btn">START</button>
-                        <button id="pomo-reset-btn" class="widget-btn secondary">RESET</button>
+                        <button id="pomo-start-btn" class="widget-btn accent">START</button>
+                        <button id="pomo-reset-btn" class="widget-btn">RESET</button>
                     </div>
                     <div class="pomo-modes">
                         <button id="pomo-work" class="mode-btn active">WORK</button>
@@ -103,7 +108,7 @@
                     </div>
                 </div>
 
-                <!-- Ambient Keyboard Widget -->
+                <!-- Ambient Keyboard -->
                 <div class="widget keyboard-widget">
                     <div class="widget-header-row">
                         <h3 class="widget-title">AMBIENT KEYBOARD</h3>
@@ -115,7 +120,7 @@
                     <p class="widget-desc">Play ambient musical chords and canvas ripples as you type anywhere.</p>
                 </div>
 
-                <!-- Rain Piano Widget (Only active in Tokyo) -->
+                <!-- Rain Piano (Tokyo only) -->
                 <div class="widget rain-piano-widget hidden" id="widget-rain-piano">
                     <div class="widget-header-row">
                         <h3 class="widget-title">TOKYO RAIN PIANO</h3>
@@ -127,7 +132,7 @@
                     <p class="widget-desc">Generative lo-fi electric Rhodes piano notes played by falling raindrops in Tokyo.</p>
                 </div>
 
-                <!-- Breath Sync Widget -->
+                <!-- Breath Sync -->
                 <div class="widget breathing-widget">
                     <h3 class="widget-title">BREATH SYNC</h3>
                     <div class="breathing-container">
@@ -139,53 +144,45 @@
                     <button id="breathing-toggle-btn" class="widget-btn">START PACING</button>
                 </div>
 
-                <!-- Checklist Widget -->
+                <!-- Todos -->
                 <div class="widget checklist-widget">
                     <h3 class="widget-title">TODOS</h3>
                     <form id="todo-form" class="todo-form">
                         <input type="text" id="todo-input" placeholder="Add a focus task..." autocomplete="off">
                         <button type="submit" class="todo-add-btn">+</button>
                     </form>
-                    <ul id="todo-list" class="todo-list">
-                        <!-- Loaded dynamically -->
-                    </ul>
+                    <ul id="todo-list" class="todo-list"></ul>
                 </div>
 
-                <!-- Quick Notes Widget -->
+                <!-- Scratchpad -->
                 <div class="widget notes-widget">
                     <h3 class="widget-title">SCRATCHPAD</h3>
                     <textarea id="scratchpad" placeholder="Jot down quick thoughts... (auto-saves)"></textarea>
                 </div>
             </section>
 
-            <!-- Right Area: Visualizer HUD and Mixer -->
+            <!-- Right Area -->
             <section class="control-panel">
-                <!-- Mixer Panel -->
-                <div class="mixer-widget glass-panel">
+
+                <!-- Mixer -->
+                <div class="mixer-widget glass-panel" id="panel-mixer">
                     <div class="panel-header">
                         <h2>AMBIENT MIXER</h2>
                         <div class="panel-header-controls">
-                            <!-- Play/Pause Button (Default Paused) -->
                             <button id="master-play-btn" class="icon-btn play-btn-active" title="Play Soundscape">
                                 <svg class="play-icon" id="play-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                                 </svg>
                             </button>
-                            <!-- Mute Button -->
                             <button id="master-mute-btn" class="icon-btn" title="Mute All">
                                 <svg class="mute-icon" id="mute-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <!-- Speaker base -->
                                     <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                                    <!-- Unmuted sound waves -->
                                     <path id="mute-waves" d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                                    <!-- Muted X cross lines -->
                                     <path id="mute-cross" d="M23 9 L17 15 M17 9 L23 15" class="hidden"></path>
                                 </svg>
                             </button>
                         </div>
                     </div>
-
-                    <!-- Visualizer header with Mode Switcher buttons -->
                     <div class="visualizer-header">
                         <div class="vis-modes">
                             <button id="vis-mode-wave" class="vis-mode-btn active">WAVE</button>
@@ -193,14 +190,10 @@
                             <button id="vis-mode-ring" class="vis-mode-btn">RING</button>
                         </div>
                     </div>
-                    
-                    <!-- Audio Wave Frequency Visualizer Canvas -->
                     <div class="visualizer-container">
                         <canvas id="visualizer-canvas"></canvas>
                     </div>
-
                     <div class="sliders-container">
-                        <!-- Base Drone Slider -->
                         <div class="slider-group">
                             <div class="slider-label">
                                 <span>Focus Drone</span>
@@ -208,8 +201,6 @@
                             </div>
                             <input type="range" id="slider-drone" min="0" max="100" value="40" class="ambient-slider">
                         </div>
-
-                        <!-- Environmental Sound Slider -->
                         <div class="slider-group">
                             <div class="slider-label">
                                 <span id="vol-env-label">Tokyo Rain</span>
@@ -217,8 +208,6 @@
                             </div>
                             <input type="range" id="slider-env" min="0" max="100" value="50" class="ambient-slider">
                         </div>
-
-                        <!-- Binaural Pulse Slider -->
                         <div class="slider-group">
                             <div class="slider-label">
                                 <span>Binaural Pulse</span>
@@ -226,8 +215,6 @@
                             </div>
                             <input type="range" id="slider-pulse" min="0" max="100" value="20" class="ambient-slider">
                         </div>
-
-                        <!-- Wind Chimes Slider -->
                         <div class="slider-group">
                             <div class="slider-label">
                                 <span>Wind Chimes</span>
@@ -235,8 +222,6 @@
                             </div>
                             <input type="range" id="slider-chimes" min="0" max="100" value="0" class="ambient-slider">
                         </div>
-
-                        <!-- Weather Effects Slider -->
                         <div class="slider-group" id="weather-slider-group">
                             <div class="slider-label">
                                 <span id="weather-slider-label">Atmospheric Level</span>
@@ -247,21 +232,18 @@
                     </div>
                 </div>
 
-                <!-- Scene Selector HUD -->
-                <div class="scenes-widget glass-panel">
+                <!-- Scenes -->
+                <div class="scenes-widget glass-panel" id="panel-scenes">
                     <div class="panel-header">
                         <h2>TIMELINE SCENES</h2>
-                        <!-- Interactive Scene Action Button -->
-                        <button id="scene-action-btn" class="widget-btn hidden" style="max-width: 180px; margin: 0; padding: 0.4rem 1rem; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em;"></button>
+                        <button id="scene-action-btn" class="scene-action-btn hidden"></button>
                     </div>
                     <div class="scenes-grid">
-                        <!-- Tokyo Scene -->
                         <div class="scene-card active" data-scene="tokyo">
                             <div class="card-glow tokyo-glow"></div>
                             <div class="card-content">
                                 <div class="scene-card-header">
                                     <span class="card-year">2099 AD</span>
-                                    <!-- Cityscape / Rain icon -->
                                     <svg class="scene-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"></path>
                                         <line x1="8" y1="20" x2="6" y2="22"></line>
@@ -274,18 +256,15 @@
                                 <div class="card-meta">
                                     <div class="meta-row"><span>ENV</span><span>rain.synth</span></div>
                                     <div class="meta-row"><span>DRONE</span><span>detuned-saw</span></div>
-                                    <div class="meta-row"><span>REFL</span><span>neon-asphalt.fx</span></div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Fireplace Scene -->
                         <div class="scene-card" data-scene="fireplace">
                             <div class="card-glow fireplace-glow"></div>
                             <div class="card-content">
                                 <div class="scene-card-header">
                                     <span class="card-year">1994 AD</span>
-                                    <!-- Campfire / Flame icon -->
                                     <svg class="scene-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path>
                                     </svg>
@@ -295,18 +274,15 @@
                                 <div class="card-meta">
                                     <div class="meta-row"><span>ENV</span><span>wood-crackle</span></div>
                                     <div class="meta-row"><span>DRONE</span><span>warm-tri</span></div>
-                                    <div class="meta-row"><span>FEED</span><span>firewood.phys</span></div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Space Scene -->
                         <div class="scene-card" data-scene="space">
                             <div class="card-glow space-glow"></div>
                             <div class="card-content">
                                 <div class="scene-card-header">
                                     <span class="card-year">3050 AD</span>
-                                    <!-- Orbiting Planet / Ring icon -->
                                     <svg class="scene-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <circle cx="12" cy="12" r="6"></circle>
                                         <ellipse cx="12" cy="12" rx="10" ry="3" transform="rotate(-30 12 12)"></ellipse>
@@ -317,18 +293,15 @@
                                 <div class="card-meta">
                                     <div class="meta-row"><span>ENV</span><span>solar-wind</span></div>
                                     <div class="meta-row"><span>DRONE</span><span>phase-sine</span></div>
-                                    <div class="meta-row"><span>WELL</span><span>gravity.vortex</span></div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Zen Garden Scene -->
                         <div class="scene-card" data-scene="zengarden">
                             <div class="card-glow zengarden-glow"></div>
                             <div class="card-content">
                                 <div class="scene-card-header">
                                     <span class="card-year">1480 AD</span>
-                                    <!-- Bamboo stalk icon -->
                                     <svg class="scene-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M12 2v20M17 5H7M19 12H5M17 19H7"></path>
                                     </svg>
@@ -338,11 +311,12 @@
                                 <div class="card-meta">
                                     <div class="meta-row"><span>ENV</span><span>water-drip</span></div>
                                     <div class="meta-row"><span>DRONE</span><span>C2-sub-sine</span></div>
-                                    <div class="meta-row"><span>RAKE</span><span>gravel-groove.fx</span></div>
                                 </div>
+                            </div>
                         </div>
                     </div>
-                    <!-- Sky Time Control Slider -->
+
+                    <!-- Sky Time -->
                     <div class="sky-time-container">
                         <div class="sky-time-label-row">
                             <span class="sky-time-title">🕰️ SKY TIME CONTROL</span>
@@ -354,16 +328,39 @@
             </section>
         </main>
 
-        <!-- Footer info / Tips -->
         <footer class="main-footer glass-panel">
-            <p>Chronoscapes Synthesizer v1.3 • Interactive Synth Keyboard & Holographic Themes • Fully Client-Side</p>
+            <p>Chronoscapes v1.3 · Fully Client-Side · Generative Synth + Visuals</p>
         </footer>
     </div>
 
-    <!-- Sound Effects / Synthesizer Script Hook -->
     <script src="js/audio.js"></script>
     <script src="js/canvas.js"></script>
     <script src="js/widgets.js"></script>
     <script src="js/app.js"></script>
+    <script>
+        // Mobile tab switching
+        document.querySelectorAll('.mobile-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const panel = tab.dataset.panel;
+                const focusEl = document.getElementById('panel-focus');
+                const mixerEl = document.getElementById('panel-mixer');
+                const scenesEl = document.getElementById('panel-scenes');
+                // Only applies on mobile (CSS handles visibility on larger screens)
+                if (window.innerWidth < 900) {
+                    [focusEl, mixerEl, scenesEl].forEach(el => { if(el) el.classList.add('mobile-hidden'); });
+                    if (panel === 'focus' && focusEl) focusEl.classList.remove('mobile-hidden');
+                    if (panel === 'mixer' && mixerEl) mixerEl.classList.remove('mobile-hidden');
+                    if (panel === 'scenes' && scenesEl) scenesEl.classList.remove('mobile-hidden');
+                }
+            });
+        });
+        window.addEventListener('resize', () => {
+            if (window.innerWidth >= 900) {
+                document.querySelectorAll('.mobile-hidden').forEach(el => el.classList.remove('mobile-hidden'));
+            }
+        });
+    </script>
 </body>
 </html>
