@@ -80,10 +80,15 @@ class AmbientCanvas {
         
         if (!this.fogCanvas) {
             this.fogCanvas = document.createElement('canvas');
+            this.trailCanvas = document.createElement('canvas');
         }
         this.fogCanvas.width = this.canvas.width;
         this.fogCanvas.height = this.canvas.height;
+        this.trailCanvas.width = this.canvas.width;
+        this.trailCanvas.height = this.canvas.height;
+        
         this.fogCtx = this.fogCanvas.getContext('2d');
+        this.trailCtx = this.trailCanvas.getContext('2d');
     }
     
     isBackgroundClick(e) {
@@ -433,6 +438,13 @@ class AmbientCanvas {
     }
     
     animate() {
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+        const mainCtx = this.ctx;
+        this.ctx = this.trailCtx;
+
+
+
         // Handle Tokyo lightning strike trigger
         if (this.currentScene === 'tokyo' && this.weatherLevel > 0 && !this.isWarping) {
             if (Math.random() < 0.0006 * this.weatherLevel) {
@@ -576,6 +588,13 @@ class AmbientCanvas {
             }
         }
 
+        // Restore the main canvas context
+        this.ctx = mainCtx;
+
+        // Draw the sharp background and particles onto the main canvas (fully cleared)
+        this.ctx.clearRect(0, 0, w, h);
+        this.ctx.drawImage(this.trailCanvas, 0, 0);
+
         // 2. Draw Frosted Glass Window Overlay (blurs background, reveals sharp areas under wiped paths)
         this.drawFrostedGlassOverlay();
 
@@ -587,7 +606,7 @@ class AmbientCanvas {
         this.updateWindowDrops(speedMult);
         this.checkDropletCollisions();
         
-        // 4. Update & Render mouse/touch particle trail
+        // 4. Update & Render mouse/touch particle trail (rendered sharp on top of glass)
         this.drawCursorTrail();
         
         requestAnimationFrame(() => this.animate());
@@ -1868,6 +1887,8 @@ class AmbientCanvas {
         }
         
         const alpha = this.isWarping ? 0.5 : 0.35;
+
+
         
         grad.addColorStop(0, `rgba(${topRGB[0]}, ${topRGB[1]}, ${topRGB[2]}, ${alpha})`);
         grad.addColorStop(1, `rgba(${bottomRGB[0]}, ${bottomRGB[1]}, ${bottomRGB[2]}, ${alpha})`);
@@ -1903,15 +1924,19 @@ class AmbientCanvas {
         // Clear fog canvas
         this.fogCtx.clearRect(0, 0, w, h);
         
-        // 1. Draw the frosted glass base (semi-transparent cool white fog)
-        // Set slightly higher opacity to give a distinct misty look
-        this.fogCtx.fillStyle = 'rgba(230, 235, 245, 0.62)';
+        // 1. Draw the blurred background and particles onto the fog canvas
+        this.fogCtx.filter = 'blur(2.8px) saturate(108%)';
+        this.fogCtx.drawImage(this.trailCanvas, 0, 0);
+        this.fogCtx.filter = 'none'; // reset filter
+        
+        // 2. Draw the frosted glass color overlay on top of the blurred layer (semi-transparent cool white fog)
+        this.fogCtx.fillStyle = 'rgba(230, 235, 245, 0.16)';
         this.fogCtx.fillRect(0, 0, w, h);
         
-        // 2. Draw condensation droplets directly onto the fog canvas
+        // 3. Draw condensation droplets directly onto the fog canvas
         this.drawWindowDrops(this.fogCtx);
         
-        // 3. Clear/Wipe the fog canvas where active wiped trails exist
+        // 4. Clear/Wipe the fog canvas where active wiped trails exist
         if (this.wipedTrails.length > 0) {
             this.fogCtx.save();
             this.fogCtx.globalCompositeOperation = 'destination-out';
@@ -1934,10 +1959,10 @@ class AmbientCanvas {
             this.fogCtx.restore();
         }
         
-        // 4. Draw the fog canvas onto the main canvas (dimming everything behind it except inside the wiped trails)
+        // 5. Draw the fog canvas onto the main canvas (dimming everything behind it except inside the wiped trails)
         this.ctx.drawImage(this.fogCanvas, 0, 0);
         
-        // 5. Decay wiped trails over time (mist mists back up slowly)
+        // 6. Decay wiped trails over time (mist mists back up slowly)
         for (let i = this.wipedTrails.length - 1; i >= 0; i--) {
             const trail = this.wipedTrails[i];
             trail.opacity -= 0.0016; // mist back up over 10–12 seconds
