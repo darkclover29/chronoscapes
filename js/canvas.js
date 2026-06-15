@@ -317,6 +317,11 @@ class AmbientCanvas {
         this.activeDrawingNode = null;
         this.nebulaLoops = [];
         
+        // Clear background canvas context immediately so old colors don't bleed into new theme
+        if (this.trailCtx) {
+            this.trailCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        
         const isMobile = window.innerWidth < 768;
         
         if (sceneName === 'tokyo') {
@@ -443,8 +448,6 @@ class AmbientCanvas {
         const mainCtx = this.ctx;
         this.ctx = this.trailCtx;
 
-
-
         // Handle Tokyo lightning strike trigger
         if (this.currentScene === 'tokyo' && this.weatherLevel > 0 && !this.isWarping) {
             if (Math.random() < 0.0006 * this.weatherLevel) {
@@ -461,15 +464,6 @@ class AmbientCanvas {
         // Space supernova flare background overlay
         if (this.currentScene === 'space' && this.supernovaFlare > 0) {
             this.ctx.fillStyle = `rgba(255, 120, 200, ${this.supernovaFlare * 0.22})`;
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        }
-        
-        // Draw lightning flash overlay if active
-        if (this.lightningFlash > 0) {
-            this.lightningFlash -= 0.07;
-            if (this.lightningFlash < 0) this.lightningFlash = 0;
-            
-            this.ctx.fillStyle = `rgba(225, 242, 255, ${this.lightningFlash * 0.38})`;
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
         
@@ -517,22 +511,16 @@ class AmbientCanvas {
         if (this.currentScene === 'tokyo') {
             this.drawTokyoNeonReflections();
             this.updateAndDrawPuddleRipples();
-            this.drawTokyoGlitchOverload();
-            if (this.isRainPianoActive) {
-                this.drawRainPianoKeys();
-            }
         }
         
         // Draw Zen Garden raked sand and Shishi-odoshi
         if (this.currentScene === 'zengarden') {
             this.updateAndDrawRakeLines();
-            this.updateAndDrawShishiOdoshi(speedMult);
         }
         
         // Draw Space Constellations
         if (this.currentScene === 'space') {
             this.updateAndDrawConstellations();
-            this.drawSpaceEventHorizon();
         }
 
         // Draw Space shooting stars
@@ -598,7 +586,37 @@ class AmbientCanvas {
         // 2. Draw Frosted Glass Window Overlay (blurs background, reveals sharp areas under wiped paths)
         this.drawFrostedGlassOverlay();
 
-        // 3. Update & Check Collisions for Window condensation droplets (rendered inside drawFrostedGlassOverlay)
+        // 3. Draw foreground interactive/action effects on top of the frosted glass (sharp and visible)
+        if (this.currentScene === 'tokyo') {
+            this.drawTokyoGlitchOverload();
+            if (this.isRainPianoActive) {
+                this.drawRainPianoKeys();
+            }
+        } else if (this.currentScene === 'zengarden') {
+            this.updateAndDrawShishiOdoshi(speedMult);
+        } else if (this.currentScene === 'space') {
+            this.drawSpaceEventHorizon();
+        }
+
+        // Full screen action/flash overlays (drawn on top of the glass for maximum visual feedback)
+        if (this.currentScene === 'space' && this.supernovaFlare > 0) {
+            this.ctx.fillStyle = `rgba(255, 100, 220, ${this.supernovaFlare * 0.35})`;
+            this.ctx.fillRect(0, 0, w, h);
+        }
+        
+        if (this.currentScene === 'fireplace' && this.fireFlare > 0) {
+            this.ctx.fillStyle = `rgba(255, 90, 0, ${this.fireFlare * 0.18})`;
+            this.ctx.fillRect(0, 0, w, h);
+        }
+
+        if (this.lightningFlash > 0) {
+            this.lightningFlash -= 0.07;
+            if (this.lightningFlash < 0) this.lightningFlash = 0;
+            this.ctx.fillStyle = `rgba(225, 242, 255, ${this.lightningFlash * 0.45})`;
+            this.ctx.fillRect(0, 0, w, h);
+        }
+
+        // 4. Update & Check Collisions for Window condensation droplets (rendered inside drawFrostedGlassOverlay)
         if (this.windowDrops.length < this.maxWindowDrops && Math.random() < 0.025) {
             this.windowDrops.push(this.generateWindowDrop(false));
         }
@@ -606,7 +624,7 @@ class AmbientCanvas {
         this.updateWindowDrops(speedMult);
         this.checkDropletCollisions();
         
-        // 4. Update & Render mouse/touch particle trail (rendered sharp on top of glass)
+        // 5. Update & Render mouse/touch particle trail (rendered sharp on top of glass)
         this.drawCursorTrail();
         
         requestAnimationFrame(() => this.animate());
@@ -1837,13 +1855,37 @@ class AmbientCanvas {
         
         const time = this.skyTime;
         
-        // Define keyframe colors [R, G, B]
-        const keyframes = [
-            { mins: 360, top: [12, 24, 48], bottom: [243, 143, 104] },   // 6:00 AM (Sunrise peach/navy)
-            { mins: 720, top: [20, 90, 160], bottom: [110, 190, 220] },  // 12:00 PM (Noon bright cyan/blue)
-            { mins: 1110, top: [55, 20, 85], bottom: [235, 95, 30] },    // 6:30 PM (Golden-hour sunset orange/purple)
-            { mins: 1440, top: [5, 4, 18], bottom: [50, 12, 90] }         // 12:00 AM (Deep midnight neon purple/black)
-        ];
+        let keyframes = [];
+        
+        if (this.currentScene === 'tokyo') {
+            keyframes = [
+                { mins: 360, top: [18, 10, 36], bottom: [255, 90, 150] },    // Cyberpunk sunrise (dark purple to hot pink)
+                { mins: 720, top: [10, 30, 90], bottom: [0, 245, 212] },     // Neon noon (electric blue to cyan)
+                { mins: 1110, top: [60, 10, 80], bottom: [255, 0, 128] },    // Neon sunset (magenta to dark violet)
+                { mins: 1440, top: [4, 2, 12], bottom: [90, 12, 150] }       // Neon midnight (dark navy to electric violet)
+            ];
+        } else if (this.currentScene === 'fireplace') {
+            keyframes = [
+                { mins: 360, top: [25, 20, 30], bottom: [230, 90, 40] },     // Warm sunrise (ash gray to amber orange)
+                { mins: 720, top: [40, 30, 30], bottom: [220, 120, 50] },    // Cozy noon (warm tan to glowing yellow)
+                { mins: 1110, top: [30, 15, 15], bottom: [180, 50, 20] },    // Cozy sunset (deep rust to charcoal gray)
+                { mins: 1440, top: [8, 5, 5], bottom: [40, 10, 5] }          // Midnight embers (charcoal black to deep dark red)
+            ];
+        } else if (this.currentScene === 'zengarden') {
+            keyframes = [
+                { mins: 360, top: [30, 45, 40], bottom: [220, 210, 170] },   // Misty dawn (sage green to soft gold)
+                { mins: 720, top: [40, 110, 90], bottom: [170, 220, 200] },  // Zen noon (soft bamboo green to mist teal)
+                { mins: 1110, top: [50, 75, 60], bottom: [210, 140, 90] },   // Zen sunset (olive green to soft terracotta)
+                { mins: 1440, top: [12, 24, 20], bottom: [40, 60, 50] }      // Quiet night (deep forest green to dark moss)
+            ];
+        } else { // 'space'
+            keyframes = [
+                { mins: 360, top: [5, 5, 15], bottom: [40, 15, 80] },        // Dawn nebula (cosmic black to violet)
+                { mins: 720, top: [10, 15, 40], bottom: [30, 70, 160] },     // Space noon (indigo to deep stellar blue)
+                { mins: 1110, top: [8, 5, 20], bottom: [80, 20, 120] },      // Sunset nebula (purple to dark magenta)
+                { mins: 1440, top: [2, 2, 6], bottom: [10, 10, 25] }         // Starry void (absolute black to faint stellar dust)
+            ];
+        }
         
         // Find adjacent keyframes
         let k1 = keyframes[0];
@@ -1864,31 +1906,7 @@ class AmbientCanvas {
         const topRGB = this.lerpColor(k1.top, k2.top, pct);
         const bottomRGB = this.lerpColor(k1.bottom, k2.bottom, pct);
         
-        // Apply subtle scene-specific coloring overlay
-        if (this.currentScene === 'fireplace') {
-            // Warm up: shift red up, blue down
-            topRGB[0] = Math.min(255, topRGB[0] + 35);
-            topRGB[2] = Math.max(0, topRGB[2] - 15);
-            bottomRGB[0] = Math.min(255, bottomRGB[0] + 45);
-            bottomRGB[2] = Math.max(0, bottomRGB[2] - 25);
-        } else if (this.currentScene === 'zengarden') {
-            // Organic earthy green shift
-            topRGB[1] = Math.min(255, topRGB[1] + 25);
-            topRGB[0] = Math.max(0, topRGB[0] - 15);
-            bottomRGB[1] = Math.min(255, bottomRGB[1] + 30);
-            bottomRGB[0] = Math.max(0, bottomRGB[0] - 15);
-        } else if (this.currentScene === 'space') {
-            // Deeper dark space styling
-            topRGB[0] = Math.max(0, topRGB[0] - 20);
-            topRGB[1] = Math.max(0, topRGB[1] - 20);
-            topRGB[2] = Math.min(255, topRGB[2] + 10);
-            bottomRGB[0] = Math.max(0, bottomRGB[0] - 15);
-            bottomRGB[1] = Math.max(0, bottomRGB[1] - 15);
-        }
-        
         const alpha = this.isWarping ? 0.5 : 0.35;
-
-
         
         grad.addColorStop(0, `rgba(${topRGB[0]}, ${topRGB[1]}, ${topRGB[2]}, ${alpha})`);
         grad.addColorStop(1, `rgba(${bottomRGB[0]}, ${bottomRGB[1]}, ${bottomRGB[2]}, ${alpha})`);

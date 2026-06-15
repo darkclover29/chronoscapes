@@ -483,12 +483,36 @@ class ChronoscapesApp {
     getVisualizerColors(isAlpha = false) {
         const time = this.skyTimeSlider ? parseInt(this.skyTimeSlider.value, 10) : 720;
         
-        const visKeyframes = [
-            { mins: 360, accent: [255, 126, 95], second: [254, 180, 123] },  // Sunrise peach/gold
-            { mins: 720, accent: [20, 90, 160], second: [110, 190, 220] },   // Noon blue/cyan
-            { mins: 1110, accent: [235, 95, 30], second: [255, 160, 50] },   // Sunset warm orange/gold
-            { mins: 1440, accent: [157, 78, 221], second: [0, 245, 212] }    // Midnight purple/cyan
-        ];
+        let visKeyframes = [];
+        if (this.currentScene === 'tokyo') {
+            visKeyframes = [
+                { mins: 360, accent: [255, 90, 150], second: [0, 245, 212] },    // hot pink / cyan
+                { mins: 720, accent: [0, 245, 212], second: [157, 78, 221] },    // cyan / neon purple
+                { mins: 1110, accent: [255, 0, 128], second: [0, 245, 212] },    // magenta / cyan
+                { mins: 1440, accent: [157, 78, 221], second: [255, 0, 128] }    // purple / magenta
+            ];
+        } else if (this.currentScene === 'fireplace') {
+            visKeyframes = [
+                { mins: 360, accent: [230, 90, 40], second: [255, 190, 11] },    // amber orange / gold
+                { mins: 720, accent: [220, 120, 50], second: [255, 150, 30] },   // noon gold / orange
+                { mins: 1110, accent: [180, 50, 20], second: [230, 90, 40] },    // sunset rust / orange
+                { mins: 1440, accent: [255, 84, 0], second: [120, 30, 10] }      // midnight ember fire
+            ];
+        } else if (this.currentScene === 'zengarden') {
+            visKeyframes = [
+                { mins: 360, accent: [143, 188, 143], second: [220, 210, 170] }, // sage / soft gold
+                { mins: 720, accent: [40, 180, 130], second: [143, 188, 143] },  // bamboo green / sage
+                { mins: 1110, accent: [100, 150, 110], second: [210, 140, 90] }, // olive / soft clay
+                { mins: 1440, accent: [34, 139, 34], second: [40, 60, 50] }       // dark forest / moss
+            ];
+        } else { // space
+            visKeyframes = [
+                { mins: 360, accent: [67, 97, 238], second: [157, 78, 221] },    // indigo / purple
+                { mins: 720, accent: [0, 245, 212], second: [67, 97, 238] },     // cyan / indigo
+                { mins: 1110, accent: [157, 78, 221], second: [255, 120, 200] }, // purple / pink
+                { mins: 1440, accent: [67, 97, 238], second: [10, 10, 35] }       // indigo / dark space
+            ];
+        }
         
         let k1 = visKeyframes[0];
         let k2 = visKeyframes[visKeyframes.length - 1];
@@ -510,24 +534,6 @@ class ChronoscapesApp {
         const r_sec = Math.round(k1.second[0] + (k2.second[0] - k1.second[0]) * pct);
         const g_sec = Math.round(k1.second[1] + (k2.second[1] - k1.second[1]) * pct);
         const b_sec = Math.round(k1.second[2] + (k2.second[2] - k1.second[2]) * pct);
-        
-        // Apply scene-specific visual adjustments
-        if (this.currentScene === 'fireplace') {
-            return {
-                accentColor: isAlpha ? `rgba(${Math.min(255, r_acc + 35)}, ${g_acc}, ${Math.max(0, b_acc - 15)}, 0.75)` : `rgb(${Math.min(255, r_acc + 35)}, ${g_acc}, ${Math.max(0, b_acc - 15)})`,
-                secondColor: isAlpha ? `rgba(${Math.min(255, r_sec + 35)}, ${g_sec}, ${Math.max(0, b_sec - 15)}, 0.7)` : `rgb(${Math.min(255, r_sec + 35)}, ${g_sec}, ${Math.max(0, b_sec - 15)})`
-            };
-        } else if (this.currentScene === 'zengarden') {
-            return {
-                accentColor: isAlpha ? `rgba(${Math.max(0, r_acc - 15)}, ${Math.min(255, g_acc + 25)}, ${b_acc}, 0.7)` : `rgb(${Math.max(0, r_acc - 15)}, ${Math.min(255, g_acc + 25)}, ${b_acc})`,
-                secondColor: isAlpha ? `rgba(${Math.max(0, r_sec - 15)}, ${Math.min(255, g_sec + 25)}, ${b_sec}, 0.75)` : `rgb(${Math.max(0, r_sec - 15)}, ${Math.min(255, g_sec + 25)}, ${b_sec})`
-            };
-        } else if (this.currentScene === 'space') {
-            return {
-                accentColor: isAlpha ? `rgba(${Math.max(0, r_acc - 20)}, ${Math.max(0, g_acc - 20)}, ${Math.min(255, b_acc + 10)}, 0.7)` : `rgb(${Math.max(0, r_acc - 20)}, ${Math.max(0, g_acc - 20)}, ${Math.min(255, b_acc + 10)})`,
-                secondColor: isAlpha ? `rgba(${Math.max(0, r_sec - 20)}, ${Math.max(0, g_sec - 20)}, ${Math.min(255, b_sec + 10)}, 0.75)` : `rgb(${Math.max(0, r_sec - 20)}, ${Math.max(0, g_sec - 20)}, ${Math.min(255, b_sec + 10)})`
-            };
-        }
         
         return {
             accentColor: isAlpha ? `rgba(${r_acc}, ${g_acc}, ${b_acc}, 0.75)` : `rgb(${r_acc}, ${g_acc}, ${b_acc})`,
